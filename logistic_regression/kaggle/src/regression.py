@@ -85,9 +85,9 @@ def gradDescent(matInput, matExpect, alpha):
 
 
 if __name__ == '__main__':
-    matInput, matExpect = loadData('train_temp.csv')
+    matInput, matExpect = loadData('/home/zheng/Downloads/train_temp.csv')
     # print matExpect
-    matWeight = gradDescent(matInput, matExpect, 0.075)
+    matWeight = gradDescent(matInput, matExpect, 0.005)
     # weight = np.loadtxt('weight2.txt')
 
     # my result
