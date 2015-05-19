@@ -1,8 +1,7 @@
 #include <fstream>
 #include "DataEntry.h"
 
-const char sep = ',';
-const static int attrNum = 617;
+string DataEntry::sep = ",";
 
 DataEntry::DataEntry(string csvLine)
 {
@@ -10,12 +9,12 @@ DataEntry::DataEntry(string csvLine)
 	id = atoi(csvLine.substr(start, end - start).c_str());
 
 	for (i = 0; i < attrNum - 1; i++) {
-		start = end + 2;
-		end = csvLine.find(',', start);
+		start = end + sep.length();
+		end = csvLine.find(sep, start);
 		vals[i] = (float)atof(csvLine.substr(start, end - start).c_str());
 	}
 
-	start = end + 2;
+	start = end + sep.length();
 	end = csvLine.length();
 	vals[i] = (float)atof(csvLine.substr(start, end - start).c_str());
 }
@@ -26,4 +25,8 @@ int DataEntry::getId() {
 
 float DataEntry::getValAt(int index) {
 	return vals[index];
+}
+
+DataEntry::~DataEntry() {
+	// delete[] vals;
 }
