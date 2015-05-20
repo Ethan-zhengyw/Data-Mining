@@ -76,6 +76,8 @@ void DecisionTree::trainTree(DecisionNode* node) {
 	entryNum = node->entryIds.size();
 	node->attrId = -1;
 	for (int i = 0; i < DataEntry::attrNum; i++) {
+		if (usedAttrs.find(i) != usedAttrs.end())
+			continue;
 		attrs_.clear();
 		alpha = 5;  // 设置间隔
 		for (int j = 0; j < entryNum; j++) {
@@ -110,6 +112,8 @@ void DecisionTree::trainTree(DecisionNode* node) {
 
 	if (node->attrId == -1 || left->entryIds.size() < 5 || right->entryIds.size() < 5)
 		return;
+
+	usedAttrs.insert(node->attrId);
 
 	cout << node->giniIndex << " " << averGini << " " << node->entryIds.size() << endl;
 	// 2. 根据1.中的划分方法创建左右节点
@@ -183,4 +187,17 @@ float DecisionTree::judgeAllTrainingData() {
 	cout << correctNum << " / " << size << " = " << correctRate << endl;
 
 	return correctRate;
+}
+
+void DecisionTree::judgeAllTestingData(string path) {
+	int label, size = DecisionTree::testingData.size();
+	ofstream ofs = ofstream(path);
+
+	ofs << "id,label" << endl;
+	for (int i = 0; i < size; i++) {
+		label = judgeOne(&DecisionTree::testingData[i]);
+		ofs << DecisionTree::testingData[i].getId() << "," << label << endl;
+	}
+
+	ofs.close();
 }

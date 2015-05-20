@@ -2,6 +2,7 @@
 #define _DECISIONTREE_H_
 
 #include <vector>
+#include <set>
 #include "TrainingDataEntry.h"
 using namespace std;
 
@@ -26,6 +27,7 @@ class DecisionTree
 public:
 	DecisionTree();
 	DecisionNode* rootNode;
+	set<int> usedAttrs;
 
 	int getTreeDepth(DecisionNode* node);
 	void trainTree(DecisionNode* node);
