@@ -25,9 +25,16 @@ class DecisionTree
 {
 public:
 	DecisionTree();
+	DecisionNode* rootNode;
+
 	int getTreeDepth(DecisionNode* node);
 	void trainTree(DecisionNode* node);
-	DecisionNode* rootNode;
+	int judgeOne(DataEntry* entry);  // 返回判断出来的entry所属的label
+	float judgeAllTrainingData();  // 对TrainingData中的每一条进行测试，并返回正确率
+	void judgeAllTestingData(string path); // 对静态成员testingData进行决策，将结果写入文件中
+
+	static vector<DataEntry> testingData;
+	static vector<DataEntry> loadTestingDataFromFile(string path);
 };
 
 #endif

@@ -6,9 +6,9 @@
 struct attr_cmp {
 	bool operator()(float x, float y) { return x > y; }
 };
-vector<TrainingDataEntry> DecisionNode::trainingData = DecisionNode::loadTrainingDataFromFile("data/train_300.csv");
 
 vector<TrainingDataEntry> DecisionNode::loadTrainingDataFromFile(string path) {
+	cout << "loading traing data from file " << path << "..." << endl;
 	vector<TrainingDataEntry> tde;
 	string csvLine;
 	ifstream fin = ifstream(path);
@@ -18,6 +18,7 @@ vector<TrainingDataEntry> DecisionNode::loadTrainingDataFromFile(string path) {
 	while (getline(fin, csvLine))
 		tde.push_back(TrainingDataEntry(csvLine));
 
+	cout << "done." << endl;
 	return tde;
 }
 
@@ -128,4 +129,58 @@ void DecisionTree::trainTree(DecisionNode* node) {
 	// 3. trainTree left and right
 	trainTree(node->left); 
 	trainTree(node->right);
+}
+
+vector<DataEntry> DecisionTree::loadTestingDataFromFile(string path) {
+	cout << "loading testing data from file " << path << "..." << endl;
+	vector<DataEntry> tde;
+	string csvLine;
+	ifstream fin = ifstream(path);
+
+	getline(fin, csvLine);  // 第一行是title
+
+	while (getline(fin, csvLine))
+		tde.push_back(DataEntry(csvLine));
+
+	cout << "done." << endl;
+	return tde;
+}
+
+int DecisionTree::judgeOne(DataEntry* entry) {
+	int label = 0, labels[26] = { 0 };
+	DecisionNode* node = rootNode;
+
+	while (node->left && node->right) {
+		if (entry->getValAt(node->attrId) < node->attrVal)
+			node = node->left;
+		else
+			node = node->right;
+	}
+	
+	for (int i = 0; i < node->entryIds.size(); i++)
+		labels[DecisionNode::trainingData[node->entryIds[i]].getLabel() - 1]++;
+
+	for (int i = 0; i < 26; i++)
+		label = (labels[i] > labels[label]) ? i : label;
+	label += 1;
+
+	cout << entry->getId() << "," << label << endl;
+
+	return label;
+}
+
+float DecisionTree::judgeAllTrainingData() {
+	int label, correctNum = 0, size = DecisionNode::trainingData.size();
+	float correctRate;
+
+	for (int i = 0; i < size; i++) {
+		label = judgeOne(&DecisionNode::trainingData[i]);
+		if (label == DecisionNode::trainingData[i].getLabel())
+			correctNum++;
+	}
+
+	correctRate = (float)correctNum / size;
+	cout << correctNum << " / " << size << " = " << correctRate << endl;
+
+	return correctRate;
 }
