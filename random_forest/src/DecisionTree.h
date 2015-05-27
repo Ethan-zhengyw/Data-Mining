@@ -29,7 +29,7 @@ public:
 	DecisionNode* rootNode;
 	set<int> usedAttrs;
 
-	int getTreeDepth(DecisionNode* node);
+	static int getTreeDepth(DecisionNode* node);
 	void trainTree(DecisionNode* node);
 	int judgeOne(DataEntry* entry);  // 返回判断出来的entry所属的label
 	float judgeAllTrainingData();  // 对TrainingData中的每一条进行测试，并返回正确率
@@ -37,6 +37,9 @@ public:
 
 	static vector<DataEntry> testingData;
 	static vector<DataEntry> loadTestingDataFromFile(string path);
+	static int alpha;  // alpha 代表从候选分割值集合下标处的值每次递增的值
+	static int beta;  // beta 代表每个决策节点最多的记录数
+	static int seed;
 };
 
 #endif

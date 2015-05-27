@@ -1,7 +1,12 @@
 ﻿#include <iostream>
 #include <fstream>
 #include <set>
+#include <ctime>
 #include "DecisionTree.h"
+
+using namespace std;
+
+int DecisionTree::seed = 0;
 
 struct attr_cmp {
 	bool operator()(float x, float y) { return x > y; }
@@ -49,19 +54,26 @@ int DecisionTree::getTreeDepth(DecisionNode* node) {
 }
 
 DecisionTree::DecisionTree() {
+	int size = DecisionNode::trainingData.size();
 	rootNode = new DecisionNode();
-	for (unsigned i = 0; i < DecisionNode::trainingData.size(); i++) {
-		rootNode->entryIds.push_back(i);
+	srand(time(NULL) + (seed++));
+
+	for (unsigned i = 0; i < size; i++) {
+		if ((rand() % 10) < 9)  // 随机抽取90%的数据用来训练
+			rootNode->entryIds.push_back(DecisionNode::trainingData[i].getId());
 	}
+
 	rootNode->calGiniIndex();
+	alpha = (alpha > 5) ? alpha : 5;
+	beta = (beta > 10) ? beta : 10;
 }
 
 void DecisionTree::trainTree(DecisionNode* node) {
 	if (!node
 		// || 信息增益 < 阈值
-		|| node->giniIndex < 0.1  // 满意的基尼系数
-		|| getTreeDepth(rootNode) >= 300
-		|| node->entryIds.size() < 10)  {// 最大决策树深度
+		|| node->giniIndex < 0.01  // 满意的基尼系数
+		|| getTreeDepth(rootNode) >= 30  // 最大决策树深度
+		|| node->entryIds.size() < beta)  {
 		node->attrId = -1;
 		return;
 	}
@@ -70,16 +82,18 @@ void DecisionTree::trainTree(DecisionNode* node) {
 	set<float> attrs_;
 	set<float>::iterator iter;
 	float targetVal, averGini = node->giniIndex;
-	int entryNum, targetId, alpha;  // alpha 代表从候选分割值集合下标处的值每次递增的值
-	DecisionNode *left = NULL, *right = NULL;
+	int entryNum, targetId;  
+	DecisionNode left, right;
+
 
 	entryNum = node->entryIds.size();
 	node->attrId = -1;
+	srand(time(NULL) + (seed++));
 	for (int i = 0; i < DataEntry::attrNum; i++) {
-		if (usedAttrs.find(i) != usedAttrs.end())
+		if (usedAttrs.find(i) != usedAttrs.end()  // 属性还没用过
+			&& (rand() % 10) >= 6)  // 只有60%的属性会被选来
 			continue;
 		attrs_.clear();
-		alpha = 5;  // 设置间隔
 		for (int j = 0; j < entryNum; j++) {
 			attrs_.insert(DecisionNode::trainingData[node->entryIds[j]].getValAt(i));
 		}
@@ -89,33 +103,37 @@ void DecisionTree::trainTree(DecisionNode* node) {
 			for (int t = 0; t < alpha; t++)
 				iter++;
 			targetVal = *iter;
-			left = new DecisionNode();
-			right = new DecisionNode();
+			left = DecisionNode();
+			right = DecisionNode();
 			for (int k = 0; k < entryNum; k++) {
 				if (DecisionNode::trainingData[node->entryIds[k]].getValAt(i) < targetVal) {
-					left->entryIds.push_back(node->entryIds[k]);
+					left.entryIds.push_back(node->entryIds[k]);
 				} else {
-					right->entryIds.push_back(node->entryIds[k]);
+					right.entryIds.push_back(node->entryIds[k]);
 				}
 			}
-			left->calGiniIndex();
-			right->calGiniIndex();
-			float newAverGini = (left->giniIndex * left->entryIds.size()
-				+ right->giniIndex * right->entryIds.size()) / entryNum;
-			if (newAverGini < averGini) {
+			left.calGiniIndex();
+			right.calGiniIndex();
+			float newAverGini = (left.giniIndex * left.entryIds.size()
+				+ right.giniIndex * right.entryIds.size()) / entryNum;
+			if (newAverGini < averGini
+				&& left.entryIds.size() > beta / 3
+				&& right.entryIds.size() > beta / 3
+				&& node->giniIndex - newAverGini > 0.0005
+				) {
 				node->attrId = i;
 				node->attrVal = targetVal;
 				averGini = newAverGini;
 			}
+			// delete left; delete right;
 		}
 	}
 
-	if (node->attrId == -1 || left->entryIds.size() < 5 || right->entryIds.size() < 5)
+	if (node->attrId == -1)
 		return;
 
 	usedAttrs.insert(node->attrId);
 
-	cout << node->giniIndex << " " << averGini << " " << node->entryIds.size() << endl;
 	// 2. 根据1.中的划分方法创建左右节点
 	node->left = new DecisionNode();
 	node->right = new DecisionNode();
@@ -130,9 +148,14 @@ void DecisionTree::trainTree(DecisionNode* node) {
 	node->left->calGiniIndex();
 	node->right->calGiniIndex();
 
+	std::cout << node->giniIndex << "-->" << averGini << ":"
+		<< node->entryIds.size() << "\t" << node->left->entryIds.size() << ":" << node->left->giniIndex << "\t"
+		<< node->right->entryIds.size() << ":" << node->right->giniIndex << endl;
+
+
 	// 3. trainTree left and right
-	trainTree(node->left); 
 	trainTree(node->right);
+	trainTree(node->left); 
 }
 
 vector<DataEntry> DecisionTree::loadTestingDataFromFile(string path) {
@@ -168,7 +191,7 @@ int DecisionTree::judgeOne(DataEntry* entry) {
 		label = (labels[i] > labels[label]) ? i : label;
 	label += 1;
 
-	cout << entry->getId() << "," << label << endl;
+	// cout << entry->getId() << "," << label << endl;
 
 	return label;
 }

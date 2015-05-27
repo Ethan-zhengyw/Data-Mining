@@ -1,7 +1,7 @@
 #include <fstream>
 #include "DataEntry.h"
 
-string DataEntry::sep = ", ";
+string DataEntry::sep = ",";
 
 DataEntry::DataEntry(string csvLine)
 {
@@ -25,8 +25,4 @@ int DataEntry::getId() {
 
 float DataEntry::getValAt(int index) {
 	return vals[index];
-}
-
-DataEntry::~DataEntry() {
-	// delete[] vals;
 }
