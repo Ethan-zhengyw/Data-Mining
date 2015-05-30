@@ -60,7 +60,7 @@ void Network::initWeight(int seed) {
 		ihW.push_back(vector<float>());
 		ihC.push_back(vector<float>());
 		for (int j = 0; j < hN; j++) {
-			ihW[i].push_back(float(rand() % 4000) / 1000 - 2);
+			ihW[i].push_back(float(rand() % 100) / 10000 - 0.005);
 			ihC[i].push_back(0);
 		}
 	}
@@ -70,7 +70,7 @@ void Network::initWeight(int seed) {
 		hoW.push_back(vector<float>());
 		hoC.push_back(vector<float>());
 		for (int j = 0; j < oN; j++) {
-			hoW[i].push_back(float(rand() % 4000) / 1000 - 2);
+			hoW[i].push_back(float(rand() % 100) / 10000 - 0.005);
 			hoC[i].push_back(0);
 		}
 	}
@@ -112,7 +112,7 @@ void Network::feedForward(TrainingDataEntry entry) {
 		for (int j = 0; j < hN; j++) {
 			result += hO[j] * hoW[j][i];
 		}
-		result = sigmoid(result);
+		//result = sigmoid(result);
 		oO[i] = result;
 	}
 }
@@ -122,7 +122,7 @@ void Network::backPropagation(float desired) {
 	// error of output layer and output layer
 	// only one output now, so the deisred is a number, when there are more than one output
 	// just replace the parameter desired with a float vector
-	oE[0] = oO[0] * (1 - oO[0]) * (desired - oO[0]);
+	oE[0] = /*oO[0] * (1 - oO[0]) * */(desired - oO[0]);
 	for (int i = 0; i < hN; i++) {
 		hE[i] = oE[0] * hoW[i][0];
 	}
@@ -133,8 +133,8 @@ void Network::backPropagation(float desired) {
 	// update hidden-output layer's weight
 	for (int i = 0; i < hN; i++) {
 		for (int j = 0; j < oN; j++) {
-			tempWeightChange = beta * oE[j] * hO[i];
-			hoW[i][j] = hoW[i][j] + tempWeightChange + (alpha * hoC[i][j]);
+			tempWeightChange = beta * oE[j] * hO[i] + (alpha * hoC[i][j]);
+			hoW[i][j] = hoW[i][j] + tempWeightChange;
 			hoC[i][j] = tempWeightChange;
 		}
 	}
@@ -142,8 +142,8 @@ void Network::backPropagation(float desired) {
 	// update input-hidden layer's weight
 	for (int i = 0; i < iN; i++) {
 		for (int j = 0; j < hN; j++) {
-			tempWeightChange = beta * hE[j] * iO[i];
-			ihW[i][j] = ihW[i][j] + tempWeightChange + (alpha * ihC[i][j]);
+			tempWeightChange = beta * hE[j] * iO[i] * hO[j] * (1 - hO[j]) + (alpha * ihC[i][j]);
+			ihW[i][j] = ihW[i][j] + tempWeightChange;
 			ihC[i][j] = tempWeightChange;
 		}
 	}
@@ -182,11 +182,11 @@ float Network::judgeOne(DataEntry entry) {
 		for (int j = 0; j < hN; j++) {
 			result += hO[j] * hoW[j][i];
 		}
-		result = sigmoid(result);
+		// result = sigmoid(result);
 		oO[i] = result;
 	}
 
-	return oO[0] * (maxRef - minRef) + minRef;
+	return oO[0]/* * (maxRef - minRef) + minRef*/;
 }
 
 float Network::judgeAllTrainingData() {
@@ -196,16 +196,16 @@ float Network::judgeAllTrainingData() {
 	for (int i = 0; i < size; i++) {
 		ref = judgeOne(trainingData[i]);
 		desired_ref = trainingData[i].getReference();
-		errorSum += abs(ref - desired_ref);
+		errorSum += (ref - desired_ref) * (ref - desired_ref);
 	}
 
-	cout << preScore << "-->";
 	preScore = curScore;
-	curScore = errorSum / size;
+	cout << preScore << "-->";
+	curScore = sqrt(errorSum / size);
 	cout << curScore << " ^ " << preScore - curScore << endl;
 
 
-	if (preScore < curScore) {
+	/*if (preScore < curScore) {
 		cout << "alpha: " << alpha << " beta: " << beta << endl;
 		cout << "update alpha: ";
 		cin >> alpha;
@@ -216,7 +216,7 @@ float Network::judgeAllTrainingData() {
 			cout << "curScore: " << curScore << endl;
 			// judgeAllTestingData("result_best.csv");
 		}
-	}
+	}*/
 	bestScore = (curScore < bestScore) ? curScore : bestScore;
 
 	return curScore;
@@ -254,13 +254,13 @@ float Network::getBeta() {
 }
 
 void Network::trainOne(TrainingDataEntry entry) {
-	oE[0] = 100;
-	float maxError = 0.05f;
-	while ((oE[0] > maxError) || (oE[0] < -maxError)) {
+	//oE[0] = 100;
+	//float maxError = 0.05f;
+	//while ((oE[0] > maxError) || (oE[0] < -maxError)) {
 		feedForward(entry);
-		backPropagation(entry.getNormalizedRef());
+		backPropagation(entry.getReference());
 		// cout << "oE: " << oE[0] << "max: " << maxError << "min: " << -maxError << endl;
-	}
+	//}
 	// cout << "done oE: " << i << endl;
 }
 
